@@ -24,6 +24,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 			(bool) true if successful, false otherwise.
 	-->
 	<export function="me"/>
+	<export function="localizedMessage"/>
 	
 	<script src="binds_c.lua" type="client"/>
 	<script src="chat_c.lua" type="client"/>

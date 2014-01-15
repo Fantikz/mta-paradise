@@ -98,7 +98,7 @@ local function localMessage( from, message, r, g, b, range, r2, g2, b2 )
 	end
 end
 
-local function localizedMessage( from, prefix, message, r, g, b, range, r2, g2, b2 )
+function localizedMessage( from, prefix, message, r, g, b, range, r2, g2, b2 )
 	if type( range ) == 'table' then
 		r2 = r
 		g2 = g
@@ -192,6 +192,13 @@ local function faction( player, factionID, message )
 	if factionID then
 		local tag = exports.factions:getFactionTag( factionID )
 		exports.factions:sendMessageToFaction( factionID, "(( " .. tag .. " )) " .. getPlayerName( player ) .. ": " .. message, 127, 127, 255 )
+	end
+end
+
+-- radio chat
+local function radio( player, frequency, message )
+	if frequency then
+		-- TODO: Finish radio function and add item as well.
 	end
 end
 
@@ -540,7 +547,7 @@ addEventHandler( "onPlayerPrivateMessage", root,
 )
 
 -- /dice
-addCommandHandler( "dice", 
+addCommandHandler( { "roll", "rolldice", "dice" }, 
 	function( thePlayer, commandName )
 		if exports.players:isLoggedIn( thePlayer ) and not isPedDead( thePlayer ) then
 			me( thePlayer, "rolls a dice. It shows " .. math.random( 6 ) .. ".", "(Dice)" )
@@ -549,7 +556,7 @@ addCommandHandler( "dice",
 )
 
 -- /coin
-addCommandHandler( "coin", 
+addCommandHandler( { "flipcoin", "coin" }, 
 	function( thePlayer, commandName )
 		if exports.players:isLoggedIn( thePlayer ) and not isPedDead( thePlayer ) then
 			if exports.players:getMoney( thePlayer ) >= 1 then
