@@ -56,7 +56,7 @@ local function loadBank( id, x, y, z, rotation, interior, dimension, skin )
 	else
 		bank = createPed( skin, x, y, z )
 		setPedRotation( bank, rotation )
-		setPedFrozen( bank, true )
+		setElementFrozen( bank, true )
 		
 		if dimension > 0 and not blips[ dimension ] then
 			if getResourceState( getResourceFromName( "interiors" ) ) == "running" then
@@ -84,7 +84,7 @@ addEventHandler( "onPedWasted", resourceRoot,
 		if bankID then
 			bank = createPed( skin, getElementPosition( source ) )
 			setPedRotation( bank, getPedRotation( source ) )
-			setPedFrozen( bank, true )
+			setElementFrozen( bank, true )
 			
 			setElementInterior( bank, getElementInterior( source ) )
 			setElementDimension( bank, getElementDimension( source ) )
