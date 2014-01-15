@@ -682,7 +682,7 @@ addEventHandler( getResourceName( resource ) .. ":spawn", root,
 					setCameraInterior( source, char.interior )
 					
 					toggleAllControls( source, true, true, false )
-					setPedFrozen( source, false )
+					setElementFrozen( source, false )
 					setElementAlpha( source, 255 )
 					
 					setElementHealth( source, char.health )
