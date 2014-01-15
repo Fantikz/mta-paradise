@@ -177,7 +177,7 @@ function isPlayerInFactionType( player, type_ )
 	if f then
 		for _, value in pairs( f ) do
 			if factions[ value ] and factions[ value ].type == type_ then
-				return true, value, factions[ value ].name, factions[ value ].tag
+				return true, value, factions[ value ].name, factions[ value ].tag, p[ player ].rfactions[ value ].leader
 			end
 		end
 	end
@@ -532,6 +532,8 @@ addCommandHandler( "createfaction",
 					else
 						outputChatBox( "MySQL-Error.", player, 255, 0, 0 )
 					end
+				else
+					outputChatBox( "There is no set-up group for that yet. Ask a developer to implement it.", player, 245, 20, 20, false)
 				end
 			else
 				local list = { }
