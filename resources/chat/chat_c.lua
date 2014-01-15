@@ -22,7 +22,7 @@ end
 addCommandHandler( { "clear", "clearchat" },
 	function( commandName )
 		if exports.players:isLoggedIn( localPlayer ) then
-			for i = 1, getChatboxLayout( "chat_lines" ) do
+			for i = 1, getChatboxLayout( )[ "chat_lines" ] do
 				outputChatBox( " " )
 			end
 		end
