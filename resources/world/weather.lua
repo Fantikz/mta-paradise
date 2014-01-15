@@ -19,6 +19,7 @@ local remoteAddress = get( 'weather' )
 
 --
 
+local celsius = 20
 local weather =
 {
 	-- not all weathers make sense/look good at all times, this should prolly be fixed (alternative suggestion: make a table and make the weather occurences managable via admin/clicks (never - seldom - average - more than usual - often)
@@ -30,30 +31,92 @@ local weather =
 	dull = { 12, 13, 14, 15 },
 }
 
+local details =
+{
+	-- could've been made easily with just the opposite way, but whatever really
+	["sky is clear"] = { "sunny" },
+	["few clouds"] = { "sunny" },
+	["scattered clouds"] = { "sunny" },
+	["broken clouds"] = { "sunny" },
+	["cold"] = { "sunny" },
+	["hot"] = { "sunny" },
+	["overcast clouds"] = { "clouds" },
+	["light rain"] = { "rainy", 0.8, 0.07 },
+	["moderate rain"] = { "rainy", 1.0, 0.1, 0.8 },
+	["hail"] = { "rainy", 1.0, 0.1, 0.8 },
+	["heavy intensity rain"] = { "rainy", 1.2, 0.35, 1.0 },
+	["very heavy rain"] = { "rainy", 1.4, 1.0, 1.6 },
+	["extreme rain"] = { "rainy", 1.6, 2.5, 2.0 },
+	["freezing rain"] = { "rainy", 1.8, 4.0, 2.3 },
+	["light intensity shower rain"] = { "rainy", 0.75 },
+	["shower rain"] = { "rainy", 0.7 },
+	["heavy intensity shower rain"] = { "rainy", 0.87 },
+	["light intensity drizzle"] = { "rainy", 0.1 },
+	["drizzle"] = { "rainy", 0.2 },
+	["heavy intensity drizzle"] = { "rainy", 0.35 },
+	["drizzle rain"] = { "rainy", 0.4 },
+	["heavy intensity drizzle rain"] = { "rainy", 0.55 },
+	["shower drizzle"] = { "rainy", 0.62 },
+	["thunderstorm with light rain"] = { "stormy", 0.66, 0.2, 0.8 },
+	["thunderstorm with rain"] = { "stormy", 1.0, 0.4, 1.2 },
+	["thunderstorm with heavy rain"] = { "stormy", 1.2, 0.75, 1.4 },
+	["light thunderstorm"] = { "stormy" },
+	["thunderstorm"] = { "stormy" },
+	["heavy thunderstorm"] = { "stormy" },
+	["ragged thunderstorm"] = { "stormy" },
+	["thunderstorm with light drizzle"] = { "stormy", 0.1 },
+	["thunderstorm with drizzle"] = { "stormy", 0.2 },
+	["thunderstorm with heavy drizzle"] = { "stormy", 0.35 },
+	["mist"] = { "fog" },
+	["smoke"] = { "fog" },
+	["fog"] = { "fog" },
+	["Sand/Dust Whirls"] = { "dull", 0.2, 2.1 },
+	["haze"] = { "dull", 0.2, 2.1 },
+	["tornado"] = { "dull", 0.2, 2.1 },
+	["windy"] = { "dull", 0.2, 2.1 }
+}
+
 --
 
-local function setWeatherEx( str )
+local function setWeatherEx( str, rain, level, wave )
 	setWeather( weather[str][ math.random( #weather[str] ) ] )
+	
+	setRainLevel( rain or 0 )
+	setWaterLevel( level or 0 )
+	setWaveHeight( wave or 0.5 )
 end
 
-local function setWeatherFromRemote( w, e )
-	if w == "ERROR" then
-		outputDebugString( "Weather: " .. remoteAddress .. " returned an error: " .. e, 2 )
-	elseif w == nil then
+local function setWeatherFromRemote( data )
+	if not data or not data[1] or not data[2] or not data[3] or not data[4] then
 		outputDebugString( "Weather: " .. remoteAddress .. " returned no usable data.", 2 )
 	else
-		if w == 'sunny' or w == 'mostly sunny' or w == 'chance of storm' then
-			setWeatherEx( 'sunny' )
-		elseif w == 'partly cloudy' or w == 'mostly cloudy' or w == 'smoke' or w == 'cloudy' then
-			setWeatherEx( 'clouds' )
-		elseif w == 'showers' or w == 'rain' or w == 'chance of rain' then
-			setWeatherEx( 'rainy' )
-		elseif w == 'storm' or w == 'thunderstorm' or w == 'chance of tstorm' then
-			setWeatherEx( 'stormy' )
-		elseif w == 'fog' or w == 'icy' or w == 'snow' or w == 'chance of snow' or w == 'flurries' or w == 'sleet' or w == 'mist' then
-			setWeatherEx( 'fog' )
-		elseif w == 'dust' or w == 'haze' then
-			setWeatherEx( 'dull' )
+		local _weather, _celsius, _wind, _direction = unpack( data )
+		celsius = _celsius
+		
+		if details[_weather] then
+			setWeatherEx( details[_weather][1], details[_weather][2] or 0, details[_weather][3] or 0, details[_weather][4] or 0 )
+		else
+			setWeatherEx( "sunny", 0, 0, 0 )
+		end
+		
+		if _direction == "SSE" or _direction == "SE" then
+			setWindVelocity( _wind, -_wind, _wind )
+		elseif _direction == "NNE" or _direction == "NE" then
+			setWindVelocity( _wind, _wind, _wind )
+		elseif _direction == "NNW" or _direction == "NW" then
+			setWindVelocity( -_wind, _wind, _wind )
+		elseif _direction == "SSW" or _direction == "SW" then
+			setWindVelocity( -_wind, -_wind, _wind )
+		elseif _direction == "S" then
+			setWindVelocity( 0.1, -_wind, _wind )
+		elseif _direction == "N" then
+			setWindVelocity( 0.1, _wind, _wind )
+		elseif _direction == "E" then
+			setWindVelocity( _wind, 0.1, _wind )
+		elseif _direction == "W" then
+			setWindVelocity( 0.1, _wind, _wind )
+		else
+			setWindVelocity( 0.3, 0.3, 0.3 )
 		end
 	end
 end
