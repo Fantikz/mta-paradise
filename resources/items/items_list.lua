@@ -30,7 +30,7 @@ local foodMap =
 	doubledluxe = "pizza2",
 	fullrack = "pizza3",
 	hotdog = "hotdog",
-	icecreamstick = "icecream",
+	icecreamstick = "icecream"
 }
 
 local drinkMap =

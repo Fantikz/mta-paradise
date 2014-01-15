@@ -55,16 +55,20 @@ end
 --
 
 local function findFromPhoneBook( number, name )
-	if name:lower( ) == "cab" or name:lower( ) == "taxi" then
-		return 222
+	for number, content in pairs( services ) do
+		for _, serviceName in ipairs( services.names ) do
+			if name:lower( ) == serviceName:lower( ) then
+				return number
+			end
+		end
 	end
 	-- TODO: this should once in near future return the number associated to a certain name in the phone book - implies we have a phone book
 	return false
 end
 
 local function findInPhoneBook( number, otherNumber )
-	if otherNumber == 222 then
-		return "Cab"
+	if services[ otherNumber ] then
+		return services[ otherNumber ].names[1]
 	end
 	-- TODO: this should once in near future return the name of the phonebook entry assigned to that number - implies we have a phone book
 	return false
@@ -94,10 +98,24 @@ local function getTaxiDrivers( )
 	return { }
 end
 
-local services =
+local function getEmergencyServices( )
+	local personnel = { }
+	for i,player in ipairs( getElementsByType( "player" ) ) do
+		if exports.factions:isPlayerInFactionType( player, "police" ) or exports.factions:isPlayerInFactionType( player, "medical" ) then
+			table.insert(personnel, player)
+		end
+	end
+	return personnel
+end
+
+services =
 {
 	[222] =
 	{
+		names = {
+			[1] = "Cab",
+			[2] = "Taxi"
+		},
 		function( player, phoneNumber, input )
 			local drivers = getTaxiDrivers( )
 			if #drivers > 0 then
@@ -120,6 +138,49 @@ local services =
 				return false, "SF Cab Operator says: There are currently no Taxis available. Call later!"
 			end
 		end
+	},
+	[911] =
+	{
+		names = {
+			[1] = "Emergency",
+			[2] = "Help",
+			[3] = "Fire",
+			[4] = "Police",
+			[5] = "Ambulance",
+			[6] = "Medic"
+		},
+		function( player, phoneNumber, input )
+			local drivers = getEmergencyServices( )
+			if #drivers > 0 then
+				return true, "Emergency Operator says: 9-1-1, what's your emergency?"
+			else
+				return false, "Emergency Operator says: Our lines are currently flooded. Please try again later."
+			end	
+		end,
+		true,
+		function( player, phoneNumber, input )
+			local drivers = getEmergencyServices( )
+			if #drivers > 0 then
+				return true, "Emergency Operator says: Could you tell me your location?"
+			else
+				return false, "Emergency Operator says: Our lines are currently flooded. Please try again later."
+			end	
+		end,
+		true,
+		function( player, phoneNumber, input )
+			local drivers = getEmergencyServices( )
+			if #drivers > 0 then
+				for key, value in ipairs( drivers ) do
+					outputChatBox( "[RADIO] This is dispatch, we've received an emergency call from #" .. phoneNumber .. " with these details.", value, 120, 140, 210, false )
+					outputChatBox( "[RADIO] Description: " .. input[1], value, 120, 140, 210, false )
+					outputChatBox( "[RADIO] Location: " .. input[2], value, 120, 140, 210, false )
+					triggerClientEvent( value, "gui:hint", value, "Emergency Call Received", "Someone needs immediate assistance!\nLocation: " .. input[1] .. "\nDescription: " .. input[2] )
+				end
+				return false, "Emergency Operator Operator says: We've dispatched a unit to your location. It should arrive soon!"
+			else
+				return false, "Emergency Operator says: Our lines are currently flooded. Please try again later."
+			end
+		end
 	}
 }
 
@@ -130,6 +191,7 @@ local function advanceService( player, text )
 		if state then
 			if text then
 				if type( state ) == "boolean" then
+					exports.chat:localizedMessage( player, " [Cellphone] " .. getPlayerName( player ):gsub( "_", " " ) .. " says: ", text, 255, 255, 255)
 					table.insert( call.input, text )
 					call.serviceState = call.serviceState + 1
 					advanceService( player )
