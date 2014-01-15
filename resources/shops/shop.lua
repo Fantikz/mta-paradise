@@ -54,7 +54,7 @@ local function createShopPed( shopID )
 			setPedRotation( ped, shop.rotation )
 			setElementInterior( ped, shop.interior )
 			setElementDimension( ped, shop.dimension )
-			setPedFrozen( ped, true )
+			setElementFrozen( ped, true )
 			
 			return true
 		end
