@@ -26,4 +26,5 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 	<export function="me"/>
 	
 	<script src="binds_c.lua" type="client"/>
+	<script src="chat_c.lua" type="client"/>
 </meta>
