@@ -376,7 +376,7 @@ local function showLoginScreen( player, screenX, screenY, token, ip )
 	
 	-- spawn the player etc.
 	spawnPlayer( source, -1504, 1376, 3.75, 315, 0, 0, 1 )
-	setPedFrozen( source, true )
+	setElementFrozen( source, true )
 	setElementAlpha( source, 0 )
 	
 	setCameraInterior( source, 0 )
