@@ -222,7 +222,7 @@ addCommandHandler( { "freeze", "unfreeze" },
 			local other, name = exports.players:getFromName( player, otherPlayer )
 			if other then
 				if player == other or not hasObjectPermissionTo( other, "command.freeze", false ) then
-					local frozen = isPedFrozen( other )
+					local frozen = isElementFrozen( other )
 					if frozen then
 						outputChatBox( "You've unfrozen " .. name .. ".", player, 0, 255, 153 )
 						if player ~= other then
@@ -235,10 +235,10 @@ addCommandHandler( { "freeze", "unfreeze" },
 						end
 					end
 					toggleAllControls( other, frozen, true, false )
-					setPedFrozen( other, not frozen )
+					setElementFrozen( other, not frozen )
 					local vehicle = getPedOccupiedVehicle( other )
 					if vehicle then
-						setVehicleFrozen( vehicle, not frozen )
+						setElementFrozen( vehicle, not frozen )
 					end
 				else
 					outputChatBox( "You can't freeze this player.", player, 255, 0, 0 )
