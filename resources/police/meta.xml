@@ -1,0 +1,10 @@
+<meta>
+	<info name="Police System" description="Police system optimized for the MTA:Paradise gamemode." author="Socialz" version="1.0" type="script" />
+	<script src="s_police.lua" type="server" />
+	<script src="s_police_commands.lua" type="server" />
+	
+	<export function="setPlayerArrested" type="server" />
+	<export function="isPlayerArrested" type="server" />
+	<export function="getPlayerArrest" type="server" />
+	<export function="getArrestLeftTime" type="server" />
+</meta>
