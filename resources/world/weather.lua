@@ -80,7 +80,6 @@ local details =
 
 local function setWeatherEx( str, rain, level, wave )
 	setWeather( weather[str][ math.random( #weather[str] ) ] )
-	
 	setRainLevel( rain or 0 )
 	setWaterLevel( level or 0 )
 	setWaveHeight( wave or 0.5 )
