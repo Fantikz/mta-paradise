@@ -16,7 +16,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 ]]
 
 local connection = nil
-local connection = nil
 local null = nil
 local results = { }
 local max_results = 128
