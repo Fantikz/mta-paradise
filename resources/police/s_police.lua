@@ -1,15 +1,11 @@
-local jailTimers = {}
+local jailTimers = {} -- just to make sure all timers are deleted (might be useless to table timers atm)
 local jailDebug = true
-local jails =
-{
-	{
-		posX  = 219.49, posY  = 113.18, posZ  = 999.01, interior  = 10, dimension  = 1, rotZ  = 0,
-		posX2 = 219.52, posY2 = 110.91, posZ2 = 999.01, interior2 = 10, dimension2 = 1, rotZ2 = 0,
-		relX  = 0,		relY  = 0,		relZ  = 3,		interiorR = 0,  dimensionR = 0, rotZR = 0
-	}
-}
 
 local function setArrestTimer( jailPlayer, isFreshman )
+	if not isElement( jailPlayer ) then
+		return false, "Player not an element."
+	end
+	
 	local jailJSON = getPlayerArrest( getPlayerName( jailPlayer ):gsub( "_", " " ) )
 	if getArrestLeftTime( jailPlayer ) == jailJSON[3] then
 		exports.sql:query_free( "UPDATE characters SET jail = '%s' WHERE characterName = '%s'", toJSON( { 0, "", 0, 0, 0, 0, 0 } ), getPlayerName( jailPlayer ):gsub( "_", " ") )
@@ -31,9 +27,18 @@ local function setArrestTimer( jailPlayer, isFreshman )
 		local updateJSON = toJSON( { jailJSON[1], jailJSON[2], jailJSON[3], jailJSON[4], jailJSON[5], jailJSON[6], isFreshman and jailJSON[7] or jailJSON[7]+1 } )
 		exports.sql:query_free( "UPDATE characters SET jail = '%s' WHERE characterName = '%s'", updateJSON, getPlayerName( jailPlayer ):gsub( "_", " ") )
 		setElementData( jailPlayer, "police:jail", updateJSON, false )
+		
+		if jailTimers[ jailPlayer ] then
+			if isTimer( jailTimers[ jailPlayer ] ) then
+				killTimer( jailTimers[ jailPlayer ] )
+			end
+			jailTimers[ jailPlayer ] = nil
+		end
+		
 		jailTimers[ jailPlayer ] = setTimer( setArrestTimer, 60000, 1, jailPlayer )
 		outputChatBox( getArrestLeftTime( jailPlayer ), jailPlayer )
 	end
+	
 	return true
 end
 
@@ -85,7 +90,7 @@ function setPlayerArrested( jailPlayer, jailID, jailReason, jailTime, jailFine, 
 	local jailTime, jailFine = math.max( jailTime, 0 ), math.max( jailFine, 0 )
 	local jailJSON = toJSON( { jailID, jailReason, jailTime, jailFine, isElement( jailSource ) and getCharacterID( jailSource ) or 0, exports.players:getTimestamp( ) } )
 	
-	if exports.sql:query_free( "UPDATE characters SET jail = '%s' WHERE id = '%s'", jailJSON, getCharacterID( jailPlayer )) then
+	if exports.sql:query_free( "UPDATE characters SET jail = '%s' WHERE id = '%s'", jailJSON, exports.players:getCharacterID( jailPlayer )) then
 		setElementPosition( jailPlayer, jails[ jailID ].posX2, jails[ jailID ].posY2, jails[ jailID ].posZ2, true )
 		setElementInterior( jailPlayer, jails[ jailID ].interior2 )
 		setElementDimension( jailPlayer, jails[ jailID ].dimension2 )
