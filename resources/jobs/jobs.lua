@@ -22,10 +22,10 @@ local function createOurPed( )
 		destroyElement( ped )
 	end
 	
-	ped = createPed( 211, 359.7, 173.65, 1008.4 )
-	setPedRotation( ped, 270 )
-	setElementDimension( ped, 1 )
-	setElementInterior( ped, 3 )
+	ped = createPed( jobConfiguration.ped.skin, jobConfiguration.ped.posX, jobConfiguration.ped.posY, jobConfiguration.ped.posZ, jobConfiguration.ped.rotZ )
+	setPedRotation( ped, jobConfiguration.ped.rotZ )
+	setElementInterior( ped, jobConfiguration.ped.interior )
+	setElementDimension( ped, jobConfiguration.ped.dimension )
 end
 
 addEventHandler( "onPedWasted", resourceRoot, createOurPed )

@@ -17,4 +17,5 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 <meta>
 	<script src="jobs.lua"/>
 	<script src="jobs_c.lua" type="client"/>
+	<script src="jobs_g.lua" type="shared"/>
 </meta>
