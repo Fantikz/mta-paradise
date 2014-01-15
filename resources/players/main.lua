@@ -321,7 +321,7 @@ addEventHandler( "onResourceStart", resourceRoot,
 		if didCreateTable then
 			-- add default groups
 			for key, value in ipairs( groups ) do
-				value.groupID = exports.sql:query_insertid( "INSERT INTO wcf1_group (groupName, canBeFactioned) VALUES ('%s', 0)", value.groupName )
+				value.groupID = exports.sql:query_insertid( "INSERT INTO wcf1_group (groupName, canBeFactioned) VALUES ('%s', '%s')", value.groupName, value.canBeFactioned and 1 or 0 )
 			end
 		else
 			-- import all groups
