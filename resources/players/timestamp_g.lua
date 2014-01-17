@@ -20,5 +20,5 @@ function getTimestamp(year, month, day, hour, minute, second)
     timestamp = timestamp - 3600 --GMT+1 compensation
     if datetime.isdst then timestamp = timestamp - 3600 end
  
-    return timestamp
+    return math.ceil( timestamp )
 end
