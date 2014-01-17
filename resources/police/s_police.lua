@@ -1,13 +1,14 @@
-local jailTimers = {} -- just to make sure all timers are deleted (might be useless to table timers atm)
-local jailDebug = true
+local jailTimers = {}
 
 local function setArrestTimer( jailPlayer, isFreshman )
 	if not isElement( jailPlayer ) then
 		return false, "Player not an element."
 	end
 	
-	local jailJSON = getPlayerArrest( getPlayerName( jailPlayer ):gsub( "_", " " ) )
-	if getArrestLeftTime( jailPlayer ) == jailJSON[3] then
+	local jailJSON = getPlayerArrest( jailPlayer )
+	local spentTime = getArrestSpentTime( jailPlayer ) or 0
+	
+	if spentTime == jailJSON[3] then
 		exports.sql:query_free( "UPDATE characters SET jail = '%s' WHERE characterName = '%s'", toJSON( { 0, "", 0, 0, 0, 0, 0 } ), getPlayerName( jailPlayer ):gsub( "_", " ") )
 		setElementPosition( jailPlayer, jails[ jailJSON[1] ].relX, jails[ jailJSON[1] ].relY, jails[ jailJSON[1] ].relZ )
 		setElementInterior( jailPlayer, jails[ jailJSON[1] ].interiorR )
@@ -36,7 +37,6 @@ local function setArrestTimer( jailPlayer, isFreshman )
 		end
 		
 		jailTimers[ jailPlayer ] = setTimer( setArrestTimer, 60000, 1, jailPlayer )
-		outputChatBox( getArrestLeftTime( jailPlayer ), jailPlayer )
 	end
 	
 	return true
@@ -65,19 +65,19 @@ addEventHandler("onResourceStart", resourceRoot,
 				end
 			end
 			
-			if jailDebug then
+			if jailSettings._debug then
 				outputDebugString( "Loaded and refreshed jailed characters from database (jailed " .. count .. " characters).", 3 )
 			end
 		else
-			if jailDebug then
+			if jailSettings._debug then
 				outputDebugString( "Couldn't load jailed characters from database.", 2 )
 			end
 		end
 	end
 )
 
-function setPlayerArrested( jailPlayer, jailID, jailReason, jailTime, jailFine, jailSource )
-	local jailID, jailTime, jailFine, jailSource = tonumber( jailID ), tonumber( jailTime ), tonumber( jailFine )
+function arrestPlayer( jailPlayer, jailID, jailReason, jailTime, jailFine, jailSource )
+	local jailID, jailTime, jailFine = tonumber( jailID ), tonumber( jailTime ), tonumber( jailFine )
 	
 	if not isElement( jailPlayer ) or not jailID or not jailReason or not jailTime or not jailFine then
 		return false, "Invalid data passed in."
@@ -87,10 +87,10 @@ function setPlayerArrested( jailPlayer, jailID, jailReason, jailTime, jailFine, 
 		return false, "Invalid jail ID passed in, got \"" .. tostring( jailID ) .. "\"."
 	end
 	
-	local jailTime, jailFine = math.max( jailTime, 0 ), math.max( jailFine, 0 )
-	local jailJSON = toJSON( { jailID, jailReason, jailTime, jailFine, isElement( jailSource ) and getCharacterID( jailSource ) or 0, exports.players:getTimestamp( ) } )
+	local jailTime, jailFine = math.max( jailTime, jailSettings.mintime ), math.max( jailFine, jailSettings.minfine )
+	local jailJSON = toJSON( { jailID, jailReason, jailTime, jailFine, isElement( jailSource ) and exports.players:getCharacterID( jailSource ) or 0, exports.players:getTimestamp( ), 0 } )
 	
-	if exports.sql:query_free( "UPDATE characters SET jail = '%s' WHERE id = '%s'", jailJSON, exports.players:getCharacterID( jailPlayer )) then
+	if exports.sql:query_free( "UPDATE characters SET jail = '%s' WHERE characterName = '%s'", jailJSON, getPlayerName( jailPlayer ):gsub( "_", " ") ) then
 		setElementPosition( jailPlayer, jails[ jailID ].posX2, jails[ jailID ].posY2, jails[ jailID ].posZ2, true )
 		setElementInterior( jailPlayer, jails[ jailID ].interior2 )
 		setElementDimension( jailPlayer, jails[ jailID ].dimension2 )
@@ -101,6 +101,39 @@ function setPlayerArrested( jailPlayer, jailID, jailReason, jailTime, jailFine, 
 	end
 	
 	return false, "Database query failed when arresting."
+end
+
+function unjailPlayer( jailPlayer, jailID )
+	local jailID = tonumber( jailID )
+	
+	if not isElement( jailPlayer ) or not jailID then
+		return false, "Invalid data passed in."
+	end
+	
+	if not jails[ jailID ] then
+		return false, "Invalid jail ID passed in, got \"" .. tostring( jailID ) .. "\"."
+	end
+	
+	local jailJSON = toJSON( { 0, "", 0, 0, 0, 0, 0 } )
+	
+	if exports.sql:query_free( "UPDATE characters SET jail = '%s' WHERE characterName = '%s'", jailJSON, getPlayerName( jailPlayer ):gsub( "_", " ") ) then
+		setElementPosition( jailPlayer, jails[ jailID ].relX, jails[ jailID ].relY, jails[ jailID ].relZ, true )
+		setElementInterior( jailPlayer, jails[ jailID ].interiorR )
+		setElementDimension( jailPlayer, jails[ jailID ].dimensionR )
+		setElementRotation( jailPlayer, 0, 0, jails[ jailID ].rotZR )
+		removeElementData( jailPlayer, "police:jail" )
+		
+		if jailTimers[ jailPlayer ] then
+			if isTimer( jailTimers[ jailPlayer ] ) then
+				killTimer( jailTimers[ jailPlayer ] )
+			end
+			jailTimers[ jailPlayer ] = nil
+		end
+		
+		return true
+	end
+	
+	return false, "Database query failed when unjailing."
 end
 
 function isPlayerArrested( character )
@@ -116,7 +149,7 @@ function isPlayerArrested( character )
 	end
 	
 	if info then
-		local jailJSON = fromJSON( info )
+		local jailJSON = fromJSON( info.jail )
 		if jailJSON[1] ~= 0 then
 			for _, player in ipairs( getElementsByType( "player" ) ) do
 				if getPlayerName( player ):gsub( "_", " " ) == characterName then
@@ -146,14 +179,14 @@ function getPlayerArrest( character )
 	return false, "Character not found."
 end
 
-function getArrestLeftTime( character )
+function getArrestSpentTime( character )
 	if not character then
 		return false, "Invalid character name/player element passed in."
 	end
 	
 	local arrestData = getPlayerArrest( character )
 	if arrestData then
-		return arrestData[3] - arrestData[7]
+		return arrestData[7]
 	end
 	
 	return false, "Data not found or isn't jailed."

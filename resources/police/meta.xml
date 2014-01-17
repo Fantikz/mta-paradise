@@ -5,8 +5,13 @@
 	<script src="s_police.lua" type="server" />
 	<script src="s_police_commands.lua" type="server" />
 	
-	<export function="setPlayerArrested" type="server" />
+	<export function="arrestPlayer" type="server" />
+	<export function="unjailPlayer" type="server" />
 	<export function="isPlayerArrested" type="server" />
 	<export function="getPlayerArrest" type="server" />
 	<export function="getArrestLeftTime" type="server" />
+	
+	<export function="getJails" type="server" />
+	<export function="getJailSettings" type="server" />
+	<export function="setJailSettings" type="server" />
 </meta>
