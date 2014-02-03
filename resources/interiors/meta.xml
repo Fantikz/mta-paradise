@@ -19,6 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 	
 	<script src="interiors.lua"/>
 	<script src="interiors_c.lua" type="client"/>
+	<script src="light_c.lua" type="client"/>
 	
 	<!-- FIXME: Remove this function and replace with more appropriate ones (getExteriorPosition, getInteriorPositon, getName) -->
 	<export function="getInterior"/>

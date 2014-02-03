@@ -80,7 +80,7 @@ local function createBlipEx( outside, inside )
 	end
 end
 
-local function loadInterior( id, outsideX, outsideY, outsideZ, outsideInterior, outsideDimension, insideX, insideY, insideZ, insideInterior, interiorName, interiorPrice, interiorType, characterID, locked, dropoff )
+local function loadInterior( id, outsideX, outsideY, outsideZ, outsideInterior, outsideDimension, insideX, insideY, insideZ, insideInterior, interiorName, interiorPrice, interiorType, interiorLight, characterID, locked, dropoff )
 	local outside = createColSphere( outsideX, outsideY, outsideZ, 1 )
 	setElementInterior( outside, outsideInterior )
 	setElementDimension( outside, outsideDimension )
@@ -95,10 +95,11 @@ local function loadInterior( id, outsideX, outsideY, outsideZ, outsideInterior, 
 	local inside = createColSphere( insideX, insideY, insideZ, 1 )
 	setElementInterior( inside, insideInterior )
 	setElementDimension( inside, id )
+	setElementData( inside, "light", interiorLight )
 	
 	colspheres[ outside ] = { id = id, other = inside }
 	colspheres[ inside ] = { id = id, other = outside }
-	interiors[ id ] = { inside = inside, outside = outside, name = interiorName, type = interiorType, price = interiorPrice, characterID = characterID, locked = locked, blip = not locked and outsideDimension == 0 and not getElementData( outside, "price" ) and createBlipEx( outside, inside ), dropoff = dropoff }
+	interiors[ id ] = { inside = inside, outside = outside, name = interiorName, type = interiorType, price = interiorPrice, light = interiorLight, characterID = characterID, locked = locked, blip = not locked and outsideDimension == 0 and not getElementData( outside, "price" ) and createBlipEx( outside, inside ), dropoff = dropoff }
 end
 
 addEventHandler( "onResourceStart", resourceRoot,
@@ -119,6 +120,7 @@ addEventHandler( "onResourceStart", resourceRoot,
 				{ name = 'interiorName', type = 'varchar(255)' },
 				{ name = 'interiorType', type = 'tinyint(3) unsigned' },
 				{ name = 'interiorPrice', type = 'int(10) unsigned' },
+				{ name = 'interiorLight', type = 'tinyint(2) unsigned', default = 0 },
 				{ name = 'characterID', type = 'int(10) unsigned', default = 0 },
 				{ name = 'locked', type = 'tinyint(3)', default = 0 },
 				{ name = 'dropoffX', type = 'float', null = true },
@@ -131,7 +133,7 @@ addEventHandler( "onResourceStart", resourceRoot,
 		local result = exports.sql:query_assoc( "SELECT * FROM interiors ORDER BY interiorID ASC" )
 		if result then
 			for key, data in ipairs( result ) do
-				loadInterior( data.interiorID, data.outsideX, data.outsideY, data.outsideZ, data.outsideInterior, data.outsideDimension, data.insideX, data.insideY, data.insideZ, data.insideInterior, data.interiorName, data.interiorPrice, data.interiorType, data.characterID, data.locked == 1, data.dropoffX and data.dropoffY and data.dropoffZ and { data.dropoffX, data.dropoffY, data.dropoffZ } or nil )
+				loadInterior( data.interiorID, data.outsideX, data.outsideY, data.outsideZ, data.outsideInterior, data.outsideDimension, data.insideX, data.insideY, data.insideZ, data.insideInterior, data.interiorName, data.interiorPrice, data.interiorType, data.interiorLight, data.characterID, data.locked == 1, data.dropoffX and data.dropoffY and data.dropoffZ and { data.dropoffX, data.dropoffY, data.dropoffZ } or nil )
 			end
 		end
 	end
@@ -146,7 +148,7 @@ addCommandHandler( "createinterior",
 				local x, y, z = getElementPosition( player )
 				local insertid = exports.sql:query_insertid( "INSERT INTO interiors (outsideX, outsideY, outsideZ, outsideInterior, outsideDimension, insideX, insideY, insideZ, insideInterior, interiorName, interiorType, interiorPrice) VALUES (" .. table.concat( { x, y, z, getElementInterior( player ), getElementDimension( player ), interior.x, interior.y, interior.z, interior.interior, '"%s"', tonumber( type ), tonumber( price ) }, ", " ) .. ")", name )
 				if insertid then
-					loadInterior( insertid, x, y, z, getElementInterior( player ), getElementDimension( player ), interior.x, interior.y, interior.z, interior.interior, name, tonumber( price ), tonumber( type ), 0, false )
+					loadInterior( insertid, x, y, z, getElementInterior( player ), getElementDimension( player ), interior.x, interior.y, interior.z, interior.interior, name, tonumber( price ), tonumber( type ), 0, 0, false )
 					outputChatBox( "Interior created. (ID " .. insertid .. ")", player, 0, 255, 0 )
 				else
 					outputChatBox( "MySQL-Query failed.", player, 255, 0, 0 )
@@ -250,6 +252,51 @@ addCommandHandler( "setinterior",
 		end
 	end,
 	true
+)
+
+addCommandHandler( "setlightlevel",
+	function( player, commandName, level )
+		local level = tonumber( level )
+		
+		if ( not level ) or ( level < 0 or level > 10 ) then
+			outputChatBox( "Syntax: /" .. commandName .. " [level: 0-10]", player, 255, 255, 255 )
+			return
+		end
+		
+		local level = math.abs( level )
+		local int = interiors[ getElementDimension( player ) ]
+		
+		if int then
+			if exports.sql:query_free( "UPDATE interiors SET interiorLight = %s WHERE interiorID = " .. getElementDimension( player ), level ) then
+				setElementData( int.inside, "light", level, true )
+				outputChatBox( "Light level set to " .. level .. ".", player, 0, 255, 0 )
+			else
+				outputChatBox( "MySQL-Query failed.", player, 255, 0, 0 )
+			end
+		else
+			outputChatBox( "You are not in an interior.", player, 255, 0, 0 )
+		end
+	end
+)
+
+addCommandHandler( "togglelight",
+	function( player, commandName )
+		local int = interiors[ getElementDimension( player ) ]
+		
+		if int then
+			local level = tonumber( getElementData( int.inside, "light" ) )
+			local newLevel = ( level == 0 and 10 or 0 )
+			
+			if exports.sql:query_free( "UPDATE interiors SET interiorLight = %s WHERE interiorID = " .. getElementDimension( player ), newLevel ) then
+				setElementData( int.inside, "light", newLevel, true )
+				outputChatBox( "Lights are now toggled " .. (newLevel == 10 and "on" or "off") .. ".", player, 0, 255, 0 )
+			else
+				outputChatBox( "MySQL-Query failed.", player, 255, 0, 0 )
+			end
+		else
+			outputChatBox( "You are not in an interior.", player, 255, 0, 0 )
+		end
+	end
 )
 
 addCommandHandler( "setinteriorinside",
@@ -513,11 +560,13 @@ addEventHandler( "onColShapeHit", resourceRoot,
 		if matching and getElementType( element ) == "player" then
 			if p[ element ] then
 				unbindKey( element, "enter_exit", "down", enterInterior, p[ element ] )
+				unbindKey( element, "f", "down", enterInterior, p[ element ] )
 				unbindKey( element, "k", "down", lockInterior, p[ element ] )
 			end
 			
 			p[ element ] = source
 			bindKey( element, "enter_exit", "down", enterInterior, p[ element ] )
+			bindKey( element, "f", "down", enterInterior, p[ element ] )
 			bindKey( element, "k", "down", lockInterior, p[ element ] )
 			setElementData( element, "interiorMarker", true, false )
 		end
@@ -528,6 +577,7 @@ addEventHandler( "onColShapeLeave", resourceRoot,
 	function( element, matching )
 		if getElementType( element ) == "player" and p[ element ] then
 			unbindKey( element, "enter_exit", "down", enterInterior, p[ element ] )
+			unbindKey( element, "f", "down", enterInterior, p[ element ] )
 			unbindKey( element, "k", "down", lockInterior, p[ element ] )
 			removeElementData( element, "interiorMarker", true, false )
 			p[ element ] = nil
