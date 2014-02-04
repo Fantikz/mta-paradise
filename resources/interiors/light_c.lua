@@ -36,9 +36,9 @@ addEventHandler( "onClientResourceStart", resourceRoot,
 
 addEventHandler( "onClientHUDRender", root,
     function( )
-		if ( not darknessSource ) then return end
-		local hour, minute = getTime( )
 		local dimension = getElementDimension( localPlayer )
+		if ( not darknessSource ) or ( dimension == 0 ) then return end
+		local hour, minute = getTime( )
 		for key, colshape in ipairs ( getElementsByType( "colshape", resourceRoot ) ) do
 			local level = tonumber( getElementData( colshape, "light" ) )
 			if ( getElementDimension( colshape ) == dimension ) and ( level ) then
